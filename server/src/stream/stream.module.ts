@@ -2,6 +2,6 @@ import { Module } from '@nestjs/common';
 import { StreamController } from './stream.controller';
 
 @Module({
-  controllers: [StreamController]
+  controllers: [StreamController],
 })
 export class StreamModule {}
