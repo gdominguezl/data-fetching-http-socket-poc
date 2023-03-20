@@ -1,7 +1,7 @@
 import { Controller, Get, Res } from '@nestjs/common';
 import { Response } from 'express';
 import { interval } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { map, tap } from 'rxjs/operators';
 import { faker } from '@faker-js/faker';
 
 @Controller('stream')
@@ -31,7 +31,7 @@ export class StreamController {
       map((data) => `data: ${JSON.stringify(data)}\n\n`.repeat(5)),
     );
 
-    data$.subscribe((data) => {
+    data$.pipe(tap((x) => console.log(`streaming ${x}`))).subscribe((data) => {
       res.write(data);
     });
   }
