@@ -31,8 +31,21 @@ export class StreamController {
       map((data) => `data: ${JSON.stringify(data)}\n\n`.repeat(5)),
     );
 
-    data$.pipe(tap((x) => console.log(`streaming ${x}`))).subscribe((data) => {
-      res.write(data);
+    const subscription = data$
+      .pipe(tap((x) => console.log(`streaming ${x}`)))
+      .subscribe((data) => {
+        res.write(data);
+      });
+
+    res.on('end', () => {
+      console.log('Client dropped the connection');
+      subscription.unsubscribe();
+    });
+
+    // Detect when the server closes the connection
+    res.on('close', () => {
+      console.log('Server closed the connection');
+      subscription.unsubscribe();
     });
   }
 }
