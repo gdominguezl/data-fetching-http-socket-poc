@@ -16,35 +16,29 @@ export class StreamController {
       'X-Accel-Buffering': 'no',
     });
 
-    // Data to be fetched from the API
+    const apiURL = `http://localhost:8080/fims/get?uri=dbi/ui_config/dashboard&replyto=${faker.word.noun()}`;
+
+    // Use an observable to fetch data from the API at a regular interval
     const api$ = interval(200).pipe(
-      switchMap(() =>
-        from(
-          axios.get(
-            `http://localhost:8080/fims/get?uri=dbi/ui_config/dashboard&replyto=${faker.word.noun()}`,
-          ),
-        ).pipe(
-          catchError((error) => {
-            console.error(`API error: ${error.message}`);
-            return EMPTY; // Return an empty observable to switch to the fallback
-          }),
-        ),
-      ),
+      switchMap(() => from(axios.get(apiURL))),
+      catchError((error) => {
+        console.error(`API error: ${error.message}`);
+        return EMPTY;
+      }),
       map((response) => response.data),
     );
 
+    // Use a subscription to write data from the API to the response stream
     const subscription = api$.subscribe({
       next: (data) => {
         res.write(`data: ${JSON.stringify(data)}\n\n`);
       },
       error: (error) => {
         console.log(`Subscription error: ${error.message}`);
-        subscription.unsubscribe();
         res.end();
       },
       complete: () => {
         console.log('Subscription completed');
-        subscription.unsubscribe();
         res.end();
       },
     });
