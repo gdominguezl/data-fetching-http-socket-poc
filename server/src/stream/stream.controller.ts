@@ -1,8 +1,9 @@
 import { Controller, Get, Res } from '@nestjs/common';
 import { Response } from 'express';
-import { interval } from 'rxjs';
-import { map, tap } from 'rxjs/operators';
+import { interval, from, EMPTY } from 'rxjs';
 import { faker } from '@faker-js/faker';
+import { map, switchMap, catchError } from 'rxjs/operators';
+import axios from 'axios';
 
 @Controller('stream')
 export class StreamController {
@@ -15,31 +16,37 @@ export class StreamController {
       'X-Accel-Buffering': 'no',
     });
 
-    // Data to be fetch in finn
-    const data$ = interval(200).pipe(
-      map(() => ({
-        id: faker.datatype.uuid(),
-        name: faker.name.firstName(),
-        age: faker.datatype.number(100),
-        address: {
-          street: faker.address.street(),
-          city: faker.address.city(),
-          state: faker.address.state(),
-          country: faker.address.country(),
-        },
-      })),
-      map((data) => `data: ${JSON.stringify(data)}\n\n`.repeat(5)),
+    // Data to be fetched from the API
+    const api$ = interval(200).pipe(
+      switchMap(() =>
+        from(
+          axios.get(
+            `http://localhost:8080/fims/get?uri=dbi/ui_config/dashboard&replyto=${faker.word.noun()}`,
+          ),
+        ).pipe(
+          catchError((error) => {
+            console.error(`API error: ${error.message}`);
+            return EMPTY; // Return an empty observable to switch to the fallback
+          }),
+        ),
+      ),
+      map((response) => response.data),
     );
 
-    const subscription = data$
-      .pipe(tap((x) => console.log(`streaming ${x}`)))
-      .subscribe((data) => {
-        res.write(data);
-      });
-
-    res.on('end', () => {
-      console.log('Client dropped the connection');
-      subscription.unsubscribe();
+    const subscription = api$.subscribe({
+      next: (data) => {
+        res.write(`data: ${JSON.stringify(data)}\n\n`);
+      },
+      error: (error) => {
+        console.log(`Subscription error: ${error.message}`);
+        subscription.unsubscribe();
+        res.end();
+      },
+      complete: () => {
+        console.log('Subscription completed');
+        subscription.unsubscribe();
+        res.end();
+      },
     });
 
     // Detect when the server closes the connection

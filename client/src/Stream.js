@@ -20,18 +20,10 @@ function Stream() {
     <div>
       {data && (
         <ul>
-          <li>id: {data.id}</li>
-          <li>name: {data.name}</li>
-          <li>age: {data.age}</li>
-          <li>
-            address:
-            <ul>
-              <li>street: {data.address.street}</li>
-              <li>city: {data.address.city}</li>
-              <li>state: {data.address.state}</li>
-              <li>country: {data.address.country}</li>
-            </ul>
-          </li>
+          <li>method: {data.method}</li>
+          <li>uri: {data.uri}</li>
+          <li>replyto: {data.replyto}</li>
+          <li>username: {data.username}</li>
         </ul>
       )}
     </div>
