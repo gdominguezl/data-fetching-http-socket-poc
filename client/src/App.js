@@ -1,5 +1,5 @@
 import './App.css';
-import Stream from './Stream';
+import Stream from './components/Stream';
 
 function App() {
   return (
